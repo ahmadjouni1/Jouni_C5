@@ -1,0 +1,30 @@
+[project]
+name = "paper-mcp"
+version = "0.1.0"
+description = "arXiv paper tracker: a 3-tool FastMCP server driven by an OpenAI Agents SDK agent (EECE 503P C5)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastmcp>=4.1",
+    "openai-agents[litellm]>=0.24",
+    "httpx>=0.27",
+    "feedparser>=6.0",
+    "pydantic>=2.12",
+    "python-dotenv>=1.0",
+    "rich>=13.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.uv]
+package = false
