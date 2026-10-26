@@ -21,6 +21,7 @@ from typing import Any
 
 import litellm
 from dotenv import load_dotenv
+from openai.types.shared import Reasoning
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -56,6 +57,9 @@ Rules:
 - "The second one" etc. refers to the numbered list of papers you showed for the relevant search.
 - Let the tools validate input: if the user types an ID, pass it as-is (use the ID as the title if you have
   no title for it) and report what the tool says. Don't reject it yourself.
+- Every save request needs a save_paper_note call, even if you think the paper is already saved:
+  the tool checks for duplicates, not you.
+- Always end with a short reply to the user; never return an empty message.
 - When a tool returns an error, explain it plainly in one or two sentences and suggest what to do next.
   Don't retry the same failing call.
 - Show search results as a numbered list: title, first author, date, arXiv ID. Keep answers short.
@@ -211,7 +215,9 @@ async def paper_tracker_agent() -> AsyncIterator[Agent]:
             name="Paper Tracker",
             instructions=INSTRUCTIONS,
             model=LitellmModel(model=model_name, api_key=api_key),
-            model_settings=ModelSettings(retry=RETRY_SETTINGS),
+            # Gemini 3 lite models default to minimal thinking, which led to wrong tool picks and
+            # empty replies in testing; a little thinking fixes both.
+            model_settings=ModelSettings(retry=RETRY_SETTINGS, reasoning=Reasoning(effort="low")),
             mcp_servers=[server],
         )
 
@@ -221,13 +227,18 @@ async def run_turn(agent: Agent, history: list, user_text: str) -> list:
 
     On a model failure the friendly error is printed and the history is returned unchanged.
     """
+    turn_input = [*history, {"role": "user", "content": user_text}]
     try:
-        result = await Runner.run(
-            agent,
-            [*history, {"role": "user", "content": user_text}],
-            hooks=ToolCallLogger(),
-            max_turns=MAX_TURNS,
-        )
+        result = await Runner.run(agent, turn_input, hooks=ToolCallLogger(), max_turns=MAX_TURNS)
+        called_tools = any(item.type == "tool_call_item" for item in result.new_items)
+        if not str(result.final_output or "").strip() and not called_tools:
+            # Gemini occasionally returns an empty reply; one nudged retry usually fixes it. Safe to
+            # repeat because no tool ran.
+            console.print("[dim](empty reply from the model, retrying once)[/]")
+            nudge = {"role": "user", "content": f"{user_text}\n\n(Please handle this request now.)"}
+            result = await Runner.run(
+                agent, [*history, nudge], hooks=ToolCallLogger(), max_turns=MAX_TURNS
+            )
     except Exception as exc:  # provider/model errors: show a friendly message, keep chatting
         console.print(f"[bold red]Paper Tracker:[/] {describe_model_error(exc)}")
         return history
