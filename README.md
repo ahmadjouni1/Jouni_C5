@@ -96,9 +96,14 @@ Tested with Python 3.12, fastmcp 4.1.4, openai-agents 0.24.0, litellm 1.83.0 and
   4. "Save paper abc123 with note test" (bad ID, clean error)
   5. "Save the second paper from the first search again" (duplicate, clean error)
 
-  It then reads `notes://papers` over the same MCP connection. By default it uses a fresh temporary
-  notes file so it can be re-run. Pass `--keep` to use `data/notes.json`, and `--pause 15` for longer
-  pauses.
+  It then reads `notes://papers` over the same MCP connection. The output explains itself, so the
+  screencast needs no narration. It starts with an intro screen (the three tools by category, the
+  architecture and a color legend for the round-trip lines), shows a caption before each query, and
+  ends with the saved notes, the challenges and the repo link. By default it uses a fresh temporary
+  notes file so it can be re-run. Options: `--pause 15` for longer reading time, `--step` to press
+  Enter between steps, and `--keep` to use `data/notes.json`.
+- **The failure tour** shows an intro, then a table of every bad input with the error message the
+  agent receives, then a pass count (`9/9 bad inputs rejected`).
 - **In the interactive agent**, type `exit` to quit. Conversation history is kept across turns, so
   follow-ups like "save the second one" work.
 - **The tests** never touch the network or your notes. arXiv is mocked with `respx` and a sample Atom
