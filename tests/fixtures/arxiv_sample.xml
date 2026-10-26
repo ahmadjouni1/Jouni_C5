@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <link href="http://arxiv.org/api/query?search_query%3Dall%3Atool%20selection" rel="self" type="application/atom+xml"/>
+  <title type="html">ArXiv Query: search_query=all:tool selection</title>
+  <id>http://arxiv.org/api/sample</id>
+  <updated>2026-10-26T00:00:00-04:00</updated>
+  <opensearch:totalResults>3</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <opensearch:itemsPerPage>3</opensearch:itemsPerPage>
+  <entry>
+    <id>http://arxiv.org/abs/2401.12345v2</id>
+    <updated>2024-02-01T10:00:00Z</updated>
+    <published>2024-01-22T18:30:00Z</published>
+    <title>Choosing the Right Tool:
+      Selection Strategies for LLM Agents</title>
+    <summary>  Large language model agents increasingly rely on external tools. We study
+how agents select among many candidate tools and propose a retrieval-based
+selector. Experiments on three benchmarks show large gains in accuracy while
+reducing prompt length. We further analyse failure modes where similar tool
+descriptions confuse the model, and we release our benchmark suite, evaluation
+harness, and all prompts so that others can reproduce and extend these results
+on new tool catalogues and agent frameworks.
+</summary>
+    <author><name>Alice Researcher</name></author>
+    <author><name>Bob   Scientist</name></author>
+    <link href="http://arxiv.org/abs/2401.12345v2" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/2401.12345v2" rel="related" type="application/pdf"/>
+    <arxiv:primary_category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2403.00042v1</id>
+    <updated>2024-03-01T09:00:00Z</updated>
+    <published>2024-03-01T09:00:00Z</published>
+    <title>Securing the Model Context Protocol</title>
+    <summary>We analyse the attack surface of MCP servers. Tool poisoning is the main risk.</summary>
+    <author><name>Carol Security</name></author>
+    <link href="http://arxiv.org/abs/2403.00042v1" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/2403.00042v1" rel="related" type="application/pdf"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/hep-th/9901001v1</id>
+    <updated>1999-01-01T00:00:00Z</updated>
+    <published>1999-01-01T00:00:00Z</published>
+    <title>An Old-Style Identifier Paper</title>
+    <summary>Classic paper with an old-style arXiv identifier! It has two sentences.</summary>
+    <author><name>Dave Physicist</name></author>
+    <link href="http://arxiv.org/abs/hep-th/9901001v1" rel="alternate" type="text/html"/>
+  </entry>
+</feed>
