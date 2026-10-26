@@ -51,7 +51,7 @@ scripts/
   demo_queries.py   runs the 5 screencast queries in order
   try_failures.py   calls each tool with bad input and prints the clean errors
 tests/              offline pytest suite (in-memory MCP client, arXiv mocked with respx)
-docs/               summary.md (written by Ahmad) and reflection_notes.md
+docs/               summary.md (Part 1 summary) and reflection.md
 data/               notes.json lives here (gitignored)
 ```
 
@@ -196,5 +196,6 @@ validation error. The range is still stated in each parameter's description.
 ## Docs
 
 - [`docs/summary.md`](docs/summary.md): Part 1 summary of the MCP article and an existing MCP
-  server (written by Ahmad).
-- [`docs/reflection_notes.md`](docs/reflection_notes.md): working notes for the reflection.
+  server.
+- [`docs/reflection.md`](docs/reflection.md): reflection on where the tool boundaries were drawn,
+  whether three tools was the right number, the challenges, and next steps.
