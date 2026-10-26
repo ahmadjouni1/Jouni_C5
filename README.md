@@ -57,14 +57,19 @@ data/               notes.json lives here (gitignored)
 
 ## Setup
 
-1. **Install uv** (manages Python and dependencies):
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/ahmadjouni1/Jouni_C5.git
+   cd Jouni_C5
+   ```
+2. **Install uv** (manages Python and dependencies):
    - Windows (PowerShell): `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
    - macOS/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-2. **Install dependencies.** This also fetches Python 3.12, pinned in `.python-version`:
+3. **Install dependencies.** This also fetches Python 3.12, pinned in `.python-version`:
    ```bash
    uv sync
    ```
-3. **Configure the model:**
+4. **Configure the model:**
    ```bash
    cp .env.example .env        # Windows: copy .env.example .env
    ```
