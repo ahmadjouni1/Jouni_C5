@@ -38,7 +38,9 @@ from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp import MCPServerStdio
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MODEL = "gemini/gemini-flash-latest"
+# Lite is the default: gemini-flash-latest's free tier allows only ~20 requests/day.
+DEFAULT_MODEL = "gemini/gemini-flash-lite-latest"
+ALTERNATE_MODEL = "gemini/gemini-flash-latest"
 MAX_TURNS = 10
 
 INSTRUCTIONS = """\
@@ -147,10 +149,11 @@ def describe_model_error(exc: Exception) -> str:
     status = getattr(exc, "status_code", None)
     text = str(exc)
     model = os.environ.get("MODEL") or DEFAULT_MODEL
+    other = ALTERNATE_MODEL if model == DEFAULT_MODEL else DEFAULT_MODEL
     if "PerDay" in text:
         return (
             f"Today's Gemini free-tier quota for {model} is used up (some models allow only ~20 "
-            "requests per day). Try again tomorrow, or set MODEL=gemini/gemini-flash-lite-latest in .env."
+            f"requests per day). Try again tomorrow, or set MODEL={other} in .env."
         )
     if status == 429 or "RESOURCE_EXHAUSTED" in text or isinstance(exc, litellm.RateLimitError):
         return (
@@ -159,8 +162,8 @@ def describe_model_error(exc: Exception) -> str:
         )
     if status == 503 or isinstance(exc, litellm.ServiceUnavailableError):
         return (
-            "Gemini is overloaded right now (HTTP 503), even after a few retries. Try again shortly, "
-            "or set MODEL=gemini/gemini-flash-lite-latest in .env."
+            "Gemini is overloaded right now (HTTP 503), even after a retry. Try again shortly, "
+            f"or set MODEL={other} in .env."
         )
     if status in (401, 403) or isinstance(exc, litellm.AuthenticationError):
         return "Gemini rejected the API key. Check GEMINI_API_KEY in your .env file."
