@@ -28,7 +28,8 @@ async def test_happy_path_saves_top_papers(client, arxiv_ok, notes_file):
     assert data["saved"][2]["note"].endswith("old-style arXiv identifier!")
 
     params = arxiv_ok.calls.last.request.url.params
-    assert params["max_results"] == "3" and params["sortBy"] == "relevance"
+    assert params["max_results"] == "3"
+    assert params["sortBy"] == "relevance"
     assert len(json.loads(notes_file.read_text(encoding="utf-8"))) == 3
 
 
@@ -90,6 +91,7 @@ async def test_zero_results_is_empty_result_with_message(client, arxiv_empty, no
     data = result.structured_content
 
     assert not result.is_error
-    assert data["saved"] == [] and data["skipped"] == []
+    assert data["saved"] == []
+    assert data["skipped"] == []
     assert "No arXiv papers found" in data["message"]
     assert not notes_file.exists()

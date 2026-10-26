@@ -3,7 +3,7 @@
 import httpx
 import pytest
 
-from server.arxiv_client import ARXIV_API_URL
+from server.arxiv_client import ARXIV_API_URL, build_search_query
 from tests.conftest import error_text
 
 
@@ -18,17 +18,33 @@ async def test_happy_path_returns_clean_papers(client, arxiv_ok):
     assert first["authors"] == ["Alice Researcher", "Bob Scientist"]
     assert first["published"] == "2024-01-22"
     assert first["pdf_url"] == "http://arxiv.org/pdf/2401.12345v2"
-    assert "\n" not in first["summary"] and "  " not in first["summary"]
-    assert len(first["summary"]) <= 403 and first["summary"].endswith("...")
+    assert "\n" not in first["summary"]
+    assert "  " not in first["summary"]
+    assert len(first["summary"]) <= 403
+    assert first["summary"].endswith("...")
 
     # Old-style entry without a PDF link gets a constructed URL.
     assert papers[2]["pdf_url"] == "https://arxiv.org/pdf/hep-th/9901001"
 
     params = arxiv_ok.calls.last.request.url.params
-    assert params["search_query"] == "all:tool selection"
+    assert params["search_query"] == "all:tool AND all:selection"
     assert params["max_results"] == "3"
     assert params["sortBy"] == "relevance"
     assert params["sortOrder"] == "descending"
+
+
+@pytest.mark.parametrize(
+    ("query", "expected"),
+    [
+        ("transformers", "all:transformers"),
+        ("  Model  Context\nProtocol ", "all:Model AND all:Context AND all:Protocol"),
+        ('"graph neural" (networks)', "all:graph AND all:neural AND all:networks"),
+        ("search AND rescue", "all:search AND all:and AND all:rescue"),
+    ],
+)
+def test_every_query_term_is_required(query, expected):
+    # arXiv treats 'all:a b c' as a OR b OR c, so the client ANDs the terms.
+    assert build_search_query(query) == expected
 
 
 async def test_recent_sort_uses_submitted_date(client, arxiv_ok):
@@ -36,7 +52,7 @@ async def test_recent_sort_uses_submitted_date(client, arxiv_ok):
     assert arxiv_ok.calls.last.request.url.params["sortBy"] == "submittedDate"
 
 
-@pytest.mark.parametrize("query", ["", "   ", "\n\t"])
+@pytest.mark.parametrize("query", ["", "   ", "\n\t", '( "" )'])
 async def test_empty_query_is_rejected(client, respx_mock, query):
     route = respx_mock.get(ARXIV_API_URL)
     message = await error_text(client, "search_arxiv", {"query": query})

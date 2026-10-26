@@ -35,7 +35,8 @@ async def test_appends_without_touching_existing_notes(client, notes_file):
 async def test_bad_id_shows_expected_format(client, notes_file, bad_id):
     message = await error_text(client, "save_paper_note", {**NOTE, "arxiv_id": bad_id})
     assert "Invalid arXiv ID" in message
-    assert "2401.12345" in message and "hep-th/9901001" in message
+    assert "2401.12345" in message
+    assert "hep-th/9901001" in message
     assert not notes_file.exists()
 
 
@@ -45,7 +46,8 @@ async def test_duplicate_is_rejected_and_not_overwritten(client, notes_file):
     assert message == "Paper 2401.12345 is already saved."
 
     on_disk = json.loads(notes_file.read_text(encoding="utf-8"))
-    assert len(on_disk) == 1 and on_disk[0]["note"] == "Great survey."
+    assert len(on_disk) == 1
+    assert on_disk[0]["note"] == "Great survey."
 
 
 async def test_version_suffix_is_stripped(client):

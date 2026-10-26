@@ -41,6 +41,18 @@ def _truncate(text: str, limit: int = SUMMARY_MAX_CHARS) -> str:
     return cut.rstrip(",;:") + "..."
 
 
+def build_search_query(query: str) -> str:
+    """'LLM agent tools' -> 'all:LLM AND all:agent AND all:tools'.
+
+    arXiv reads a bare 'all:LLM agent tools' as LLM OR agent OR tools, which buries relevant
+    papers, so every term is required. Characters with query-syntax meaning are dropped, and
+    operator words are lowercased so they're searched as plain terms.
+    """
+    terms = re.sub(r'[():"]', " ", query).split()
+    terms = [t.lower() if t in {"AND", "OR", "ANDNOT"} else t for t in terms]
+    return " AND ".join(f"all:{term}" for term in terms)
+
+
 def _arxiv_id_from_entry_id(entry_id: str) -> str:
     """'http://arxiv.org/abs/2401.12345v2' -> '2401.12345'; also handles 'hep-th/9901001v1'."""
     raw = entry_id.split("/abs/", 1)[-1]
@@ -75,7 +87,8 @@ async def search_papers(
 
     Raises ValueError for bad input and ArxivUnavailableError if arXiv can't be reached.
     """
-    if not query or not query.strip():
+    search_query = build_search_query(query or "")
+    if not search_query:
         raise ValueError("Query cannot be empty.")
     if not 1 <= max_results <= MAX_RESULTS_LIMIT:
         raise ValueError(
@@ -85,7 +98,7 @@ async def search_papers(
         raise ValueError(f"sort_by must be 'relevance' or 'recent' (got {sort_by!r}).")
 
     params = {
-        "search_query": f"all:{query.strip()}",
+        "search_query": search_query,
         "start": 0,
         "max_results": max_results,
         "sortBy": _SORT_FIELDS[sort_by],
