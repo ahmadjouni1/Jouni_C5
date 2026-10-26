@@ -14,6 +14,7 @@ import asyncio
 import json
 import os
 import sys
+import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -21,9 +22,11 @@ from typing import Any
 
 import litellm
 from dotenv import load_dotenv
+from mcp.client.stdio import stdio_client
 from openai.types.shared import Reasoning
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.text import Text
 
 from agents import (
     Agent,
@@ -176,6 +179,43 @@ def describe_model_error(exc: Exception) -> str:
     return f"The model request failed ({type(exc).__name__}): {_short(text, 300)}"
 
 
+# FastMCP's routine log lines; they repeat what the [server] lines already say.
+_ROUTINE_SERVER_LINES = ("Starting MCP server", "Error calling tool", "with transport", "'stdio'")
+
+
+def _echo_server_log(stream) -> None:
+    """Print the server's stderr: [server] lines in yellow, anything unexpected dimmed."""
+    for line in stream:
+        line = line.rstrip()
+        if line.startswith("[server]"):
+            console.print(Text(line, style="yellow"))
+        elif line.strip() and not any(marker in line for marker in _ROUTINE_SERVER_LINES):
+            console.print(Text(line, style="dim"))
+
+
+class StdioServerWithLogs(MCPServerStdio):
+    """MCPServerStdio that shows the server's stderr log lines in the agent's console.
+
+    On Windows the MCP SDK starts the server with CREATE_NO_WINDOW, so when the agent runs in a
+    real console the server's inherited stderr goes nowhere. Routing it through a pipe and
+    echoing it from a background thread keeps the [server] lines visible on every platform.
+    """
+
+    _errlog = None
+
+    def create_streams(self):
+        read_fd, write_fd = os.pipe()
+        self._errlog = os.fdopen(write_fd, "w", encoding="utf-8")
+        reader = os.fdopen(read_fd, encoding="utf-8", errors="replace")
+        threading.Thread(target=_echo_server_log, args=(reader,), daemon=True).start()
+        return stdio_client(self.params, errlog=self._errlog)
+
+    async def cleanup(self):
+        await super().cleanup()
+        if self._errlog is not None:
+            self._errlog.close()  # lets the echo thread see EOF and finish
+
+
 def _server_env() -> dict[str, str]:
     """Environment for the MCP server subprocess: inherit ours, minus the model key it doesn't need."""
     env = {k: v for k, v in os.environ.items() if k != "GEMINI_API_KEY"}
@@ -195,7 +235,7 @@ async def paper_tracker_agent() -> AsyncIterator[Agent]:
         raise SystemExit("GEMINI_API_KEY is not set. Copy .env.example to .env and add your key.")
     model_name = os.environ.get("MODEL") or DEFAULT_MODEL
 
-    async with MCPServerStdio(
+    async with StdioServerWithLogs(
         name="paper-tracker",
         params={
             "command": sys.executable,
